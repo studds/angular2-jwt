@@ -104,14 +104,21 @@ export class JwtInterceptor implements HttpInterceptor {
     request: HttpRequest<any>,
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
+    if (
+      !this.isWhitelistedDomain(request) ||
+      this.isBlacklistedRoute(request)
+    ) {
+      return next.handle(request);
+    }
+
     const token = this.tokenGetter();
 
     if (token instanceof Promise) {
-      return from(token).pipe(mergeMap(
-        (asyncToken: string | null) => {
+      return from(token).pipe(
+        mergeMap((asyncToken: string | null) => {
           return this.handleInterception(asyncToken, request, next);
-        }
-      ));
+        })
+      );
     } else {
       return this.handleInterception(token, request, next);
     }
